@@ -1,0 +1,26 @@
+[tool.poetry]
+name = "lite-telegram"
+version = "0.1.5"
+description = "This is a simplified version of the Telegram API, designed to help developers integrate Telegram functionalities into their applications with ease."
+authors = ["akrstp <akrstp@gmail.com>"]
+readme = "README.md"
+packages = [{include = "telegram"}]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+
+
+[tool.poetry.group.dev.dependencies]
+isort = "^5.13.2"
+black = "^24.8.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 100
+
+[tool.isort]
+profile = "black"
+line_length = 100
