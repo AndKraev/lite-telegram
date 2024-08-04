@@ -1,8 +1,8 @@
-from typing import List, Optional
+from typing import List, Optional, Union
 
 import request
 from exceptions import LiteTelegramException
-from models import Update
+from models import Message, Update
 
 
 class TelegramBot:
@@ -33,16 +33,34 @@ class TelegramBot:
 
         return [Update.from_dict(update_json) for update_json in update_jsons]
 
-    def send_message(self, chat_id: str, text: str) -> dict:
+    def send_message(self, chat_id: str, text: str) -> Message:
         url = self.__base_url + "sendMessage"
         data = {
             "chat_id": chat_id,
             "text": text,
         }
-        return request.post(url, data)
+        response = request.post(url, data)
+        if not response.get("ok"):
+            raise LiteTelegramException("Response from Telegram API is not ok.")
 
-    # def send_animation(self):
-    #     url = self.__base_url + "sendAnimation"
+        return Message.from_dict(response.get("result"))
+
+    def send_animation(
+        self, chat_id: Union[int, str], animation: str, caption: Optional[str]
+    ) -> Message:
+        url = self.__base_url + "sendAnimation"
+        data = {
+            "chat_id": chat_id,
+            "animation": animation,
+        }
+        if caption:
+            data["caption"] = caption
+
+        response = request.post(url, data)
+        if not response.get("ok"):
+            raise LiteTelegramException("Response from Telegram API is not ok.")
+
+        return Message.from_dict(response.get("result"))
 
 
 if __name__ == "__main__":

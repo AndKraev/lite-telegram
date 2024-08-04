@@ -83,7 +83,7 @@ class Message(Model):
     text: Optional[str] = None
 
     @classmethod
-    def from_dict(cls, data: dict) -> "Model":
+    def from_dict(cls, data: dict) -> "Message":
         if "from" in data:
             data["from_"] = data.pop("from")
 
