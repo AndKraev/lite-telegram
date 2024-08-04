@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "lite-telegram"
-version = "0.1.5"
+version = "0.2.0"
 description = "This is a simplified version of the Telegram API, designed to help developers integrate Telegram functionalities into their applications with ease."
 authors = ["akrstp <akrstp@gmail.com>"]
 readme = "README.md"
