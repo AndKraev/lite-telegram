@@ -1,8 +1,9 @@
+from functools import partialmethod
 from typing import List, Optional, Union
 
-import request
 from exceptions import LiteTelegramException
 from models import Message, Update
+from request import request
 
 
 class TelegramBot:
@@ -15,23 +16,18 @@ class TelegramBot:
         self, offset: Optional[int] = None, limit: int = 100, timeout: int = 30
     ) -> List[Update]:
 
-        url = self.__base_url + "getUpdates"
         data = {
             "offset": offset or (self.last_update_id + 1),
             "limit": limit,
             "timeout": timeout,
         }
 
-        response = request.get(url, data)
-        if not response.get("ok"):
-            raise LiteTelegramException("Response from Telegram API is not ok.")
+        results = self._get_from_api("getUpdates", data)
 
-        update_jsons = response.get("result", [])
-
-        update_ids = map(lambda upd: upd.get("update_id"), update_jsons)
+        update_ids = map(lambda upd: upd.get("update_id"), results)
         self.last_update_id = max((self.last_update_id, *update_ids))
 
-        return [Update.from_dict(update_json) for update_json in update_jsons]
+        return [Update.from_dict(update_json) for update_json in results]
 
     def send_message(self, chat_id: str, text: str) -> Message:
         """Use this method to send text messages.
@@ -41,21 +37,18 @@ class TelegramBot:
                 (in the format @channelusername)
             text: Text of the message to be sent, 1-4096 characters after entities parsing
         """
-        url = self.__base_url + "sendMessage"
+
         data = {
             "chat_id": chat_id,
             "text": text,
         }
-        response = request.post(url, data)
-        if not response.get("ok"):
-            raise LiteTelegramException("Response from Telegram API is not ok.")
-
-        return Message.from_dict(response.get("result"))
+        result = self._post_to_api("sendMessage", data)
+        return Message.from_dict(result)
 
     def send_animation(
         self, chat_id: Union[int, str], animation: str, caption: Optional[str]
     ) -> Message:
-        url = self.__base_url + "sendAnimation"
+
         data = {
             "chat_id": chat_id,
             "animation": animation,
@@ -63,11 +56,23 @@ class TelegramBot:
         if caption:
             data["caption"] = caption
 
-        response = request.post(url, data)
+        result = self._post_to_api("sendAnimation", data)
+        return Message.from_dict(result)
+
+    def _request_api(self, suburl: str, data: dict, method: str) -> Union[dict, List[dict]]:
+
+        url = self.__base_url + suburl
+        response = request(url, data, method)
+
         if not response.get("ok"):
             raise LiteTelegramException("Response from Telegram API is not ok.")
 
-        return Message.from_dict(response.get("result"))
+        if "result" in response:
+            return response["result"]
+        return response.get("results", [])
+
+    _post_to_api = partialmethod(_request_api, method="POST")
+    _get_from_api = partialmethod(_request_api, method="GET")
 
 
 if __name__ == "__main__":
