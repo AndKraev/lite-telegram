@@ -34,6 +34,13 @@ class TelegramBot:
         return [Update.from_dict(update_json) for update_json in update_jsons]
 
     def send_message(self, chat_id: str, text: str) -> Message:
+        """Use this method to send text messages.
+
+        Args:
+            chat_id: Unique identifier for the target chat or username of the target channel
+                (in the format @channelusername)
+            text: Text of the message to be sent, 1-4096 characters after entities parsing
+        """
         url = self.__base_url + "sendMessage"
         data = {
             "chat_id": chat_id,
