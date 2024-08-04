@@ -1,6 +1,6 @@
-from dataclasses import dataclass
-from typing import Any, Union, Optional
 import typing
+from dataclasses import dataclass
+from typing import Any, Optional, Union
 
 
 def _is_optional(obj: Any):
@@ -41,6 +41,7 @@ class Chat(Model):
             float type are safe for storing this identifier.
         type: Type of the chat, can be either "private", "group", "supergroup" or "channel"
     """
+
     id: int
     type: str
 
@@ -57,6 +58,7 @@ class User(Model):
         is_bot: True, if this user is a bot
         first_name: User's or bot's first name
     """
+
     id: int
     is_bot: bool
     first_name: str
@@ -74,6 +76,7 @@ class Message(Model):
             message was sent on behalf of a chat.
         text: (Optional) For text messages, the actual UTF-8 text of the message
     """
+
     message_id: int
     chat: Chat
     from_: Optional[User] = None
@@ -100,5 +103,6 @@ class Update(Model):
             instead of sequentially.
         message: (Optional) New incoming message of any kind - text, photo, sticker, etc.
     """
+
     update_id: int
     message: Optional[Message] = None
