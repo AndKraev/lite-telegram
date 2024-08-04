@@ -1,7 +1,8 @@
-from typing import Optional
+from typing import Optional, List
 
 import request
 from exceptions import LiteTelegramException
+from models import Update
 
 
 class TelegramBot:
@@ -12,7 +13,7 @@ class TelegramBot:
 
     def get_updates(
         self, offset: Optional[int] = None, limit: int = 100, timeout: int = 30
-    ) -> dict:
+    ) -> List[Update]:
 
         url = self.__base_url + "getUpdates"
         data = {
@@ -25,12 +26,12 @@ class TelegramBot:
         if not response.get("ok"):
             raise LiteTelegramException("Response from Telegram API is not ok.")
 
-        updates = response.get("result", [])
+        update_jsons = response.get("result", [])
 
-        update_ids = map(lambda upd: upd.get("update_id"), updates)
+        update_ids = map(lambda upd: upd.get("update_id"), update_jsons)
         self.last_update_id = max((self.last_update_id, *update_ids))
 
-        return updates
+        return [Update.from_dict(update_json) for update_json in update_jsons]
 
     def send_message(self, chat_id: str, text: str) -> dict:
         url = self.__base_url + "sendMessage"
@@ -50,6 +51,6 @@ if __name__ == "__main__":
     bot = TelegramBot(os.environ["TOKEN"], auto_offset=True)
     chat_id_ = os.environ["CHAT_ID"]
 
-    bot.send_message(chat_id_, "test")
+    print(bot.send_message(chat_id_, "test"))
     print(bot.get_updates(timeout=0))
     print(bot.get_updates(timeout=0))
