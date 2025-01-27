@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "lite-telegram"
-version = "0.2.1"
+version = "0.3.0"
 description = "This is a simplified version of the Telegram API, designed to help developers integrate Telegram functionalities into their applications with ease."
 authors = ["akrstp <akrstp@gmail.com>"]
 readme = "README.md"
@@ -8,6 +8,8 @@ packages = [{include = "telegram"}]
 
 [tool.poetry.dependencies]
 python = "^3.8"
+pydantic = "^2.10.6"
+httpx = "^0.28.1"
 
 
 [tool.poetry.group.dev.dependencies]

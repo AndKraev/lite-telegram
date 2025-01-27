@@ -1,86 +1,102 @@
-from functools import partialmethod
-from typing import List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
+import httpx
 from exceptions import LiteTelegramException
 from models import Message, Update
-from request import request
+from pydantic import ValidationError
+
+URL_TEMPLATE = "https://api.telegram.org/bot{token}/{method}"
 
 
 class TelegramBot:
-    def __init__(self, token: str, auto_offset: bool = True):
-        self.__base_url = f"https://api.telegram.org/bot{token}/"
-        self.auto_offset = auto_offset
-        self.last_update_id = -1
+    _client: Optional[httpx.AsyncClient] = None
+    _count = 0
 
-    def get_updates(
-        self, offset: Optional[int] = None, limit: int = 100, timeout: int = 30
+    def __init__(self, token: str):
+        self.__token = token
+        self._offset = 0
+
+    async def get_updates(
+        self, timeout: int = 600, allowed_updates: Optional[List[str]] = None
     ) -> List[Update]:
 
-        data = {
-            "offset": offset or (self.last_update_id + 1),
-            "limit": limit,
-            "timeout": timeout,
-        }
+        data = {"offset": self._offset, "timeout": timeout}
+        if allowed_updates:
+            data["allowed_updates"] = allowed_updates
 
-        results = self._get_from_api("getUpdates", data)
+        request_timeout = max(int(timeout * 1.5), 30)
+        update_data = await self._request("getUpdates", data, request_timeout)
 
-        update_ids = map(lambda upd: upd.get("update_id"), results)
-        self.last_update_id = max((self.last_update_id, *update_ids))
+        try:
+            updates = [Update.model_validate(update_dict) for update_dict in update_data]
+        except ValidationError:
+            raise LiteTelegramException(f"Failed to validate update: {ValidationError}")
 
-        return [Update.from_dict(update_json) for update_json in results]
+        self._offset = max((update.update_id + 1 for update in updates), default=self._offset)
 
-    def send_message(self, chat_id: str, text: str) -> Message:
-        """Use this method to send text messages.
+        return updates
 
-        Args:
-            chat_id: Unique identifier for the target chat or username of the target channel
-                (in the format @channelusername)
-            text: Text of the message to be sent, 1-4096 characters after entities parsing
-        """
+    async def send_message(self, chat_id: str, text: str, timeout: int = 60) -> Message:
+        data = {"chat_id": chat_id, "text": text}
+        data = await self._request("sendMessage", data, timeout)
+        return Message.model_validate(data)
 
-        data = {
-            "chat_id": chat_id,
-            "text": text,
-        }
-        result = self._post_to_api("sendMessage", data)
-        return Message.from_dict(result)
-
-    def send_animation(
-        self, chat_id: Union[int, str], animation: str, caption: Optional[str]
+    async def send_animation(
+        self, chat_id: Union[int, str], animation: str, caption: Optional[str], timeout: int = 60
     ) -> Message:
 
-        data = {
-            "chat_id": chat_id,
-            "animation": animation,
-        }
+        data = {"chat_id": chat_id, "animation": animation}
         if caption:
             data["caption"] = caption
 
-        result = self._post_to_api("sendAnimation", data)
-        return Message.from_dict(result)
+        data = await self._request("sendAnimation", data, timeout)
+        return Message.model_validate(data)
 
-    def _request_api(self, suburl: str, data: dict, method: str) -> Union[dict, List[dict]]:
+    async def _request(self, method: str, data: Dict[str, Any], timeout: int) -> Any:
+        url = URL_TEMPLATE.format(token=self.__token, method=method)
+        request_method = "get" if method.startswith("get") else "post"
 
-        url = self.__base_url + suburl
-        response = request(url, data, method)
+        try:
+            response = await TelegramBot._client.request(
+                method=request_method, url=url, data=data, timeout=timeout
+            )
+            response.raise_for_status()
+            data = response.json()
+        except httpx.RequestError as exc:
+            raise LiteTelegramException(f"Request to TelegramApi failed: {exc}.")
 
-        if not response.get("ok"):
-            raise LiteTelegramException("Response from Telegram API is not ok.")
+        if not isinstance(data, dict) or "ok" not in data:
+            raise LiteTelegramException(f"Incorrect json format from TelegramApi: {data}.")
 
-        if "result" in response:
-            return response["result"]
-        return response.get("results", [])
+        if not data["ok"]:
+            description = data.get("description")
+            raise LiteTelegramException(f"The response is not ok from TelegramApi: {description}.")
 
-    _post_to_api = partialmethod(_request_api, method="POST")
-    _get_from_api = partialmethod(_request_api, method="GET")
+        return data.get("result")
+
+    async def __aenter__(self):
+        if TelegramBot._client is None:
+            TelegramBot._client = httpx.AsyncClient()
+
+        TelegramBot._count += 1
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        TelegramBot._count -= 1
+        if TelegramBot._count <= 0:
+            await TelegramBot._client.aclose()
 
 
 if __name__ == "__main__":
+    import asyncio
     import os
 
-    bot = TelegramBot(os.environ["TOKEN"], auto_offset=True)
+    token = os.environ["TOKEN"]
     chat_id_ = os.environ["CHAT_ID"]
 
-    print(bot.send_message(chat_id_, "test"))
-    print(bot.get_updates(timeout=0))
-    print(bot.get_updates(timeout=0))
+    async def main():
+        async with TelegramBot(token) as bot:
+            print(await bot.get_updates(timeout=0, allowed_updates=["message"]))
+            print(await bot.send_message(chat_id_, "test"))
+
+    asyncio.run(main())

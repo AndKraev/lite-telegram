@@ -1,37 +1,9 @@
-import typing
-from dataclasses import dataclass
-from typing import Any, Optional, Union
+from typing import Optional
+
+from pydantic import BaseModel
 
 
-def _is_optional(obj: Any):
-    origin = typing.get_origin(obj)
-    args = typing.get_args(obj)
-    return origin is Union and len(args) == 2 and type(None) in args
-
-
-class Model:
-    @classmethod
-    def from_dict(cls, data: dict) -> "Model":
-        kwargs = {}
-
-        for arg, value in data.items():
-            if arg in cls.__annotations__:
-                hint = cls.__annotations__[arg]
-
-                if _is_optional(hint):
-                    args = typing.get_args(hint)
-                    hint = args[0]
-
-                if issubclass(hint, Model) and isinstance(value, dict):
-                    value = hint.from_dict(value)
-
-                kwargs[arg] = value
-
-        return cls(**kwargs)
-
-
-@dataclass(frozen=True)
-class Chat(Model):
+class Chat(BaseModel):
     """This object represents a chat.
 
     Attributes:
@@ -46,8 +18,7 @@ class Chat(Model):
     type: str
 
 
-@dataclass(frozen=True)
-class User(Model):
+class User(BaseModel):
     """This object represents a Telegram user or bot.
 
     Attributes:
@@ -64,8 +35,7 @@ class User(Model):
     first_name: str
 
 
-@dataclass(frozen=True)
-class Message(Model):
+class Message(BaseModel):
     """This object represents a message.
 
     Attributes:
@@ -79,19 +49,10 @@ class Message(Model):
 
     message_id: int
     chat: Chat
-    from_: Optional[User] = None
     text: Optional[str] = None
 
-    @classmethod
-    def from_dict(cls, data: dict) -> "Message":
-        if "from" in data:
-            data["from_"] = data.pop("from")
 
-        return super().from_dict(data)
-
-
-@dataclass(frozen=True)
-class Update(Model):
+class Update(BaseModel):
     """This object represents an incoming update.
 
     Attributes:
