@@ -1,2 +1,0 @@
-class LiteTelegramException(Exception):
-    pass
