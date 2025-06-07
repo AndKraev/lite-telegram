@@ -33,6 +33,7 @@ class TelegramBot:
         endpoint = "sendMessage"
         data = {"chat_id": chat_id, "text": text}
 
+        logger.info("Sending message to {}: '{}'.", chat_id, text)
         json_data = await self._request(endpoint=endpoint, data=data)
         return self._validate_model(json_data, Message)
 
@@ -69,14 +70,14 @@ class TelegramBot:
         return self._parse_response(response)
 
     def _log_request(self, method: str, url: str, data: dict | None, timeout: int) -> None:
-        logger.info(
+        logger.debug(
             "Sending request to telegram: method - '{}', url - '{}', timeout - '{}'.",
             method,
             url.replace(self.__token, "********"),
             timeout,
         )
         if data is not None:
-            logger.info("Request data: '{}'.", data)
+            logger.debug("Request data: '{}'.", data)
 
     @staticmethod
     def _check_response(response: Response) -> None:
