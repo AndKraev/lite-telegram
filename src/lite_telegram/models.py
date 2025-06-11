@@ -8,9 +8,9 @@ class Chat(BaseModel):
 class Message(BaseModel):
     message_id: int
     chat: Chat
-    text: str | None
+    text: str | None = None
 
 
 class Update(BaseModel):
     update_id: int
-    message: Message | None
+    message: Message | None = None
