@@ -40,7 +40,6 @@ class TelegramBot:
     async def get_updates(
         self, timeout: int = 300, allowed_updates: list[str] | None = None
     ) -> list[Update]:
-        
         endpoint = "getUpdates"
         data = {"timeout": timeout, "offset": self._offset}
         if allowed_updates is not None:

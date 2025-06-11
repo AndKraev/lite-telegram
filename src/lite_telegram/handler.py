@@ -36,7 +36,6 @@ class TelegramHandler:
     async def run(
         self, update_timeout: int = 300, allowed_updates: list[str] | None = None
     ) -> None:
-        
         async with asyncio.TaskGroup() as atg:
             atg.create_task(self._run_bot_updates(update_timeout, allowed_updates))
             atg.create_task(self._run_scheduler())
@@ -44,7 +43,6 @@ class TelegramHandler:
     async def _run_bot_updates(
         self, timeout: int = 300, allowed_updates: list[str] | None = None
     ) -> None:
-        
         async with asyncio.TaskGroup() as tg:
             while True:
                 for update in await self.bot.get_updates(timeout, allowed_updates):
