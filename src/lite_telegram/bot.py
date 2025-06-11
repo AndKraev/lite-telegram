@@ -37,9 +37,14 @@ class TelegramBot:
         json_data = await self._request(endpoint=endpoint, data=data)
         return self._validate_model(json_data, Message)
 
-    async def get_updates(self, timeout: int = 300) -> list[Update]:
+    async def get_updates(
+        self, timeout: int = 300, allowed_updates: list[str] | None = None
+    ) -> list[Update]:
+        
         endpoint = "getUpdates"
         data = {"timeout": timeout, "offset": self._offset}
+        if allowed_updates is not None:
+            data["allowed_updates"] = allowed_updates
         request_timeout = self.timeout + timeout
 
         json_data = await self._request(endpoint=endpoint, data=data, timeout=request_timeout)
