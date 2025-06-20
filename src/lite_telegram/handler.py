@@ -38,8 +38,10 @@ class Handler:
     def add_handler(self, alias: str, handler: HandlerCallable) -> None:
         self._handlers[alias] = handler
 
-    def schedule(self, cron: str, task: ScheduleCallable) -> None:
-        self._schedule_tasks.append(ScheduleTask(cron, task))
+    def schedule(
+        self, cron: str, task: ScheduleCallable, random_delay: timedelta | None = None
+    ) -> None:
+        self._schedule_tasks.append(ScheduleTask(cron, task, random_delay))
 
     async def start(self) -> None:
         async with asyncio.TaskGroup() as tg:
