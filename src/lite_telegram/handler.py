@@ -8,8 +8,7 @@ from loguru import logger
 
 from lite_telegram.bot import TelegramBot
 from lite_telegram.context import Context
-from lite_telegram.models import Update
-from lite_telegram.types import HandlerCallable, ScheduleCallable
+from lite_telegram.types import FilterCallable, HandlerCallable, ScheduleCallable
 from lite_telegram.utils import sleep_until
 
 
@@ -17,16 +16,21 @@ from lite_telegram.utils import sleep_until
 class ScheduleTask:
     cron: str
     runnable_task: ScheduleCallable
-    random_delay: timedelta | None
+    random_delay: timedelta | None = None
 
 
 class Handler:
     def __init__(
-        self, bot: TelegramBot, poll_interval: int = 60, allowed_updates: list[str] | None = None
+        self,
+        bot: TelegramBot,
+        global_filter: FilterCallable | None,
+        poll_interval: int = 60,
+        allowed_updates: list[str] | None = None,
     ) -> None:
         self.bot = bot
         self.poll_interval = poll_interval
         self.allowed_updates = allowed_updates
+        self.global_filter = global_filter
 
         self._handlers: dict[str, HandlerCallable] = {}
         self._schedule_tasks: list[ScheduleTask] = []
@@ -46,11 +50,11 @@ class Handler:
         async with asyncio.TaskGroup() as tg:
             while True:
                 for update in await self.bot.get_updates(self.poll_interval, self.allowed_updates):
-                    tg.create_task(self._handle_update(update))
+                    context = Context(self.bot, update)
+                    if self.global_filter is None or self.global_filter(context):
+                        tg.create_task(self._handle_update(context))
 
-    async def _handle_update(self, update: Update) -> None:
-        context = Context(self.bot, update)
-
+    async def _handle_update(self, context: Context) -> None:
         if context.is_text_message is not None:
             handler = self._handlers.get(context.text.strip())
 
