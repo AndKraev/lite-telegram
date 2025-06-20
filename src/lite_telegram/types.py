@@ -1,7 +1,7 @@
 from typing import Awaitable, Callable
 
 from lite_telegram.bot import TelegramBot
-from lite_telegram.models import Update
+from lite_telegram.context import Context
 
-UpdateRunnable = Callable[[TelegramBot, Update], Awaitable[None]]
-ScheduleRunnable = Callable[[], Awaitable[None]]
+HandlerCallable = Callable[[Context], Awaitable[None]]
+ScheduleCallable = Callable[[TelegramBot], Awaitable[None]]

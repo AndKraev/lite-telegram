@@ -1,8 +1,11 @@
+from typing import Literal
+
 from pydantic import BaseModel
 
 
 class Chat(BaseModel):
     id: int
+    type: Literal["private", "group", "supergroup", "channel"]
 
 
 class Message(BaseModel):

@@ -7,68 +7,71 @@ from croniter import croniter
 from loguru import logger
 
 from lite_telegram.bot import TelegramBot
-from lite_telegram.types import ScheduleRunnable, UpdateRunnable
+from lite_telegram.context import Context
+from lite_telegram.models import Update
+from lite_telegram.types import HandlerCallable, ScheduleCallable
 from lite_telegram.utils import sleep_until
 
 
 @dataclass
 class ScheduleTask:
     cron: str
-    runnable_task: ScheduleRunnable
+    runnable_task: ScheduleCallable
     random_delay: timedelta | None
 
 
-class TelegramHandler:
-    def __init__(self, bot: TelegramBot) -> None:
+class Handler:
+    def __init__(
+        self, bot: TelegramBot, poll_interval: int = 60, allowed_updates: list[str] | None = None
+    ) -> None:
         self.bot = bot
+        self.poll_interval = poll_interval
+        self.allowed_updates = allowed_updates
 
-        self._update_handlers: list[UpdateRunnable] = []
+        self._handlers: dict[str, HandlerCallable] = {}
         self._schedule_tasks: list[ScheduleTask] = []
 
-    def add_update_handler(self, update_handler: UpdateRunnable) -> None:
-        self._update_handlers.append(update_handler)
+    def add_handler(self, alias: str, handler: HandlerCallable) -> None:
+        self._handlers[alias] = handler
 
-    def schedule(
-        self, cron: str, task_runnable: ScheduleRunnable, random_delay: timedelta = None
-    ) -> None:
-        self._schedule_tasks.append(ScheduleTask(cron, task_runnable, random_delay))
+    def schedule(self, cron: str, task: ScheduleCallable) -> None:
+        self._schedule_tasks.append(ScheduleTask(cron, task))
 
-    async def run(
-        self, update_timeout: int = 300, allowed_updates: list[str] | None = None
-    ) -> None:
-        async with asyncio.TaskGroup() as atg:
-            atg.create_task(self._run_bot_updates(update_timeout, allowed_updates))
-            atg.create_task(self._run_scheduler())
+    async def start(self) -> None:
+        async with asyncio.TaskGroup() as tg:
+            tg.create_task(self._run_handlers())
+            tg.create_task(self._run_scheduler())
 
-    async def _run_bot_updates(
-        self, timeout: int = 300, allowed_updates: list[str] | None = None
-    ) -> None:
+    async def _run_handlers(self) -> None:
         async with asyncio.TaskGroup() as tg:
             while True:
-                for update in await self.bot.get_updates(timeout, allowed_updates):
+                for update in await self.bot.get_updates(self.poll_interval, self.allowed_updates):
                     tg.create_task(self._handle_update(update))
 
-    async def _handle_update(self, update) -> None:
-        async with asyncio.TaskGroup() as tg:
-            for handler in self._update_handlers:
-                tg.create_task(handler(self.bot, update))
+    async def _handle_update(self, update: Update) -> None:
+        context = Context(self.bot, update)
+
+        if context.is_text_message is not None:
+            handler = self._handlers.get(context.text.strip())
+
+            if handler is not None:
+                await handler(context)
 
     async def _run_scheduler(self) -> None:
-        async with asyncio.TaskGroup() as atg:
+        async with asyncio.TaskGroup() as tg:
             for task in self._schedule_tasks:
-                atg.create_task(self._run_schedule(task))
+                tg.create_task(self._run_scheduled_task(task))
 
-    async def _run_schedule(self, task: ScheduleTask) -> None:
+    async def _run_scheduled_task(self, task: ScheduleTask) -> None:
+        task_name = task.runnable_task.__name__
+
         for next_run in croniter(task.cron, datetime.now()).all_next(datetime):
             if task.random_delay is not None:
-                randoms_secs = random.randint(0, task.random_delay.seconds)
-                next_run += timedelta(seconds=randoms_secs)
+                next_run += timedelta(seconds=random.randint(0, task.random_delay.seconds))
 
-            logger.info(
-                "Scheduled task '{}' will start at {}.", task.runnable_task.__name__, next_run
-            )
+            logger.info("Scheduled task '{}' will start at {}.", task_name, next_run)
             await sleep_until(next_run)
 
-            logger.info("Starting scheduled task '{}'.", task.runnable_task.__name__)
-            await task.runnable_task()
-            logger.info("Finished scheduled task '{}'.", task.runnable_task.__name__)
+            logger.info("Starting scheduled task '{}'.", task_name)
+            await task.runnable_task(self.bot)
+            logger.info("Finished scheduled task '{}'.", task_name)
