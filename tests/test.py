@@ -12,7 +12,7 @@ TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 
 
 async def command_hello(context: Context) -> None:
-    await context.message("hello")
+    await context.reply("hello")
 
 async def every_min(bot: TelegramBot):
     await bot.send_message(TELEGRAM_CHAT_ID, "schedule every min!")
