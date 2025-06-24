@@ -18,6 +18,18 @@ BASE_URL_TEMPLATE = "https://api.telegram.org/bot{token}/"
 
 
 class TelegramBot:
+    """A Telegram bot.
+
+    Args:
+        client: The client to use for the bot.
+        token: The token to use for the bot.
+        timeout: The timeout to use for the bot.
+
+    Example:
+        >>> async with httpx.AsyncClient() as client:
+        >>>     bot = TelegramBot(client, "YOUR_BOT_TOKEN")
+        >>>     await bot.send_message(chat_id=1234567890, text="Hello, world!")
+    """
     def __init__(self, client: AsyncClient, token: str, timeout: int = 60) -> None:
         self.client = client
         self.__token = token
@@ -27,9 +39,23 @@ class TelegramBot:
         self._offset = 0
 
     async def get_me(self) -> dict | list[dict]:
+        """Get the bot's information.
+
+        Returns:
+            The bot's information.
+        """
         return await self._request(endpoint="getMe")
 
     async def send_message(self, chat_id: int, text: str) -> Message:
+        """Send a message to a chat with the bot.
+
+        Args:
+            chat_id: The ID of the chat to send the message to.
+            text: The text of the message to send.
+
+        Returns:
+            The sent message.
+        """
         endpoint = "sendMessage"
         data = {"chat_id": chat_id, "text": text}
 
@@ -40,6 +66,21 @@ class TelegramBot:
     async def get_updates(
         self, timeout: int = 300, allowed_updates: list[str] | None = None
     ) -> list[Update]:
+        """Get updates from the bot.
+
+        Args:
+            timeout: The timeout to use for the request.
+            allowed_updates: The allowed updates to get. Values: "message", "edited_message",
+                "channel_post", "edited_channel_post".
+
+        Returns:
+            The updates.
+
+        Example:
+            >>> updates = await bot.get_updates()
+            >>> for update in updates:
+            >>>     print(update.message.text)
+        """
         endpoint = "getUpdates"
         data = {"timeout": timeout, "offset": self._offset}
         if allowed_updates is not None:
