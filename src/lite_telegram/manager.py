@@ -16,7 +16,7 @@ class Schedule(NamedTuple):
     task: ScheduleCallable
 
 
-class Application:
+class BotManager:
     def __init__(
         self,
         bot: TelegramBot,
@@ -43,8 +43,11 @@ class Application:
 
     def schedule(self, cron: str, task: ScheduleCallable) -> None:
         self._schedules.append(Schedule(cron, task))
+    
+    def start(self) -> None:
+        asyncio.run(self.astart())
 
-    async def start(self) -> None:
+    async def astart(self) -> None:
         async with asyncio.TaskGroup() as tg:
             tg.create_task(self._run_updates())
             tg.create_task(self._run_scheduler())
