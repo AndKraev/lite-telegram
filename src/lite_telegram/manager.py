@@ -17,6 +17,13 @@ class Schedule(NamedTuple):
 
 
 class BotManager:
+    """A manager for a Telegram bot.
+
+    Args:
+        bot: The bot to manage.
+        poll_interval: The interval to poll for updates.
+        allowed_updates: The allowed updates to poll for.
+    """
     def __init__(
         self,
         bot: TelegramBot,
@@ -33,21 +40,60 @@ class BotManager:
         self._schedules: list[Schedule] = []
 
     def add_command(self, command: str, handle: HandlerCallable) -> None:
+        """Add a command handler.
+
+        Args:
+            command: The command to add.
+            handle: The handler to add.
+
+        Example:
+            >>> manager.add_command("/start", start_command)
+            >>> manager.add_command("/help", help_command)
+        """
         self._commands[command] = handle
 
     def add_text_handler(self, handle: HandlerCallable) -> None:
+        """Add a text handler.
+
+        Args:
+            handle: The handler to add.
+
+        Example:
+            >>> manager.add_text_handler(echo)
+        """
         self._text_handlers.append(handle)
 
     def add_filter(self, filter: FilterCallable) -> None:
+        """Add a global filter for all messages.
+
+        Args:
+            filter: The filter to add.
+
+        Example:
+            >>> manager.add_filter(allowed_chats([1234567890]))
+        """
         self._filters.append(filter)
 
     def schedule(self, cron: str, task: ScheduleCallable) -> None:
+        """Add a schedule task to run periodically.
+
+        Args:
+            cron: The cron expression.
+            task: The task to add.
+
+        Example:
+            >>> manager.schedule("*/5 * * * *", task)
+        """
         self._schedules.append(Schedule(cron, task))
     
     def start(self) -> None:
+        """Start the bot to run the updates and scheduled tasks.
+        """
         asyncio.run(self.astart())
 
     async def astart(self) -> None:
+        """Start the bot to run the updates and scheduled tasks.
+        """
         async with asyncio.TaskGroup() as tg:
             tg.create_task(self._run_updates())
             tg.create_task(self._run_scheduler())
