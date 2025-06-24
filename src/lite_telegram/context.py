@@ -27,6 +27,10 @@ class Context:
     @property
     def text(self) -> str | None:
         return self.update.message.text if self.is_text_message else None
+    
+    @property
+    def chat_id(self) -> int | None:
+        return self.update.message.chat.id if self.update.message is not None else None
 
     def reply(self, text: str) -> Message:
         if self.update.message is None:
