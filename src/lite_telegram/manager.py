@@ -85,7 +85,7 @@ class BotManager:
             >>> manager.schedule("*/5 * * * *", task)
         """
         self._schedules.append(Schedule(cron, task))
-    
+
     def start(self) -> None:
         """Start the bot to run the updates and scheduled tasks.
         """

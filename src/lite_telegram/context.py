@@ -24,7 +24,7 @@ class Context:
         """Check if the update is a text message.
         """
         return self.update.message is not None and self.update.message.text is not None
-    
+
     @property
     def is_command(self) -> bool:
         """Check if the update is a command.
@@ -42,7 +42,7 @@ class Context:
         """Get the text of the message if it is a text message and None otherwise.
         """
         return self.update.message.text if self.is_text_message else None
-    
+
     @property
     def chat_id(self) -> int | None:
         """Get the chat id of the message if it is a message and None otherwise.
@@ -57,7 +57,7 @@ class Context:
 
         Returns:
             The message that was sent.
-        
+
         Raises:
             TelegramException: If the context is not a message.
         """
@@ -65,7 +65,7 @@ class Context:
             raise TelegramException("Context is not a message.")
 
         return self.bot.send_message(self.update.message.chat.id, text)
-    
+
     def set(self, key: str, value: Any) -> None:
         """Set a parameter for the context.
 
@@ -74,7 +74,7 @@ class Context:
             value: The value to set.
         """
         self._params[key] = value
-    
+
     def get(self, key: str) -> Any | None:
         """Get a parameter from the context.
 
