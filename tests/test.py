@@ -3,9 +3,8 @@ import os
 
 import httpx
 
-from lite_telegram.bot import TelegramBot
-from lite_telegram.handler import Handler
-from lite_telegram.context import Context
+from lite_telegram import TelegramBot, BotManager, Context, allowed_chats
+
 
 TELEGRAM_CHAT_ID = int(os.getenv("TELEGRAM_CHAT_ID"))
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
@@ -24,13 +23,12 @@ async def main():
 
         # await bot.send_message(TELEGRAM_CHAT_ID, "hi")
 
-        is_allowed_chat = lambda ctx: (
-            ctx.update.message is not None and ctx.update.message.chat.id == TELEGRAM_CHAT_ID
-        )
-        handler = Handler(bot, is_allowed_chat)
-        handler.add_handler("/hello", command_hello)
-        handler.schedule("* * * * *", every_min)
-        await handler.start()
+
+        manager = BotManager(bot, allowed_updates=["message"])
+        manager.add_filter(allowed_chats(TELEGRAM_CHAT_ID))
+        manager.add_command("/hello", command_hello)
+        manager.schedule("* * * * *", every_min)
+        await manager.astart()
 
 
 if __name__ == "__main__":
