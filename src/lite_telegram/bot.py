@@ -7,6 +7,7 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 
 from lite_telegram.exceptions import TelegramException
 from lite_telegram.models import Message, TelegramResponse, Update
+from lite_telegram.types import UpdateType
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -61,7 +62,7 @@ class TelegramBot:
         return self._validate_model(resp_data, Message)
 
     async def get_updates(
-        self, timeout: int = 300, allowed_updates: list[str] | None = None
+        self, timeout: int = 300, allowed_updates: list[UpdateType] | None = None
     ) -> list[Update]:
         """Get updates from the bot.
 
