@@ -3,7 +3,8 @@ import os
 
 import httpx
 
-from lite_telegram import TelegramBot, BotManager, Context, allowed_chats
+from lite_telegram import TelegramBot, BotManager, Context
+from lite_telegram.utils import allowed_chats
 
 
 TELEGRAM_CHAT_ID = int(os.getenv("TELEGRAM_CHAT_ID"))
