@@ -1,6 +1,11 @@
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel
+
+
+class TelegramResponse(BaseModel):
+    ok: bool
+    result: Any
 
 
 class Chat(BaseModel):

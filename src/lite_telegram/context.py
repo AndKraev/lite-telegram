@@ -21,35 +21,39 @@ class Context:
 
     @property
     def is_text_message(self) -> bool:
-        """Check if the update is a text message.
-        """
+        """Check if the update is a text message."""
         return self.update.message is not None and self.update.message.text is not None
 
     @property
     def is_command(self) -> bool:
-        """Check if the update is a command.
-        """
-        return self.is_text_message and self.text.startswith("/") and len(self.text) > 1
+        """Check if the update is a command."""
+        return (
+            self.update.message is not None
+            and self.update.message.text is not None
+            and self.update.message.text.startswith("/")
+            and len(self.update.message.text) > 1
+        )
 
     @property
     def is_private_chat(self) -> bool:
-        """Check if the update is a private chat.
-        """
+        """Check if the update is a private chat."""
         return self.update.message is not None and self.update.message.chat.type == "private"
 
     @property
     def text(self) -> str | None:
-        """Get the text of the message if it is a text message and None otherwise.
-        """
-        return self.update.message.text if self.is_text_message else None
+        """Get the text of the message if it is a text message and None otherwise."""
+        return (
+            self.update.message.text
+            if self.update.message is not None and self.update.message.text is not None
+            else None
+        )
 
     @property
     def chat_id(self) -> int | None:
-        """Get the chat id of the message if it is a message and None otherwise.
-        """
+        """Get the chat id of the message if it is a message and None otherwise."""
         return self.update.message.chat.id if self.update.message is not None else None
 
-    def reply(self, text: str) -> Message:
+    async def reply(self, text: str) -> Message:
         """Reply to the update message.
 
         Args:
@@ -64,7 +68,7 @@ class Context:
         if self.update.message is None:
             raise TelegramException("Context is not a message.")
 
-        return self.bot.send_message(self.update.message.chat.id, text)
+        return await self.bot.send_message(self.update.message.chat.id, text)
 
     def set(self, key: str, value: Any) -> None:
         """Set a parameter for the context.

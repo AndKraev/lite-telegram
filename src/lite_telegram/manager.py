@@ -24,6 +24,7 @@ class BotManager:
         poll_interval: The interval to poll for updates.
         allowed_updates: The allowed updates to poll for.
     """
+
     def __init__(
         self,
         bot: TelegramBot,
@@ -87,13 +88,11 @@ class BotManager:
         self._schedules.append(Schedule(cron, task))
 
     def start(self) -> None:
-        """Start the bot to run the updates and scheduled tasks.
-        """
+        """Start the bot to run the updates and scheduled tasks."""
         asyncio.run(self.astart())
 
     async def astart(self) -> None:
-        """Start the bot to run the updates and scheduled tasks.
-        """
+        """Start the bot to run the updates and scheduled tasks."""
         async with asyncio.TaskGroup() as tg:
             tg.create_task(self._run_updates())
             tg.create_task(self._run_scheduler())
@@ -105,20 +104,20 @@ class BotManager:
                 if await self._filter_context(context):
                     await self._handle_update(context)
 
-    async def _filter_context(self, context: Context) -> bool:
+    async def _filter_context(self, ctx: Context) -> bool:
         for filter in self._filters:
-            if not await filter(context):
+            if not await filter(ctx):
                 return False
         return True
 
-    async def _handle_update(self, context: Context) -> None:
-        if context.is_command:
-            alias = context.text.split(" ")[0]
+    async def _handle_update(self, ctx: Context) -> None:
+        if ctx.text is not None and ctx.is_command:
+            alias = ctx.text.split(" ")[0]
             if (command := self._commands.get(alias)) is not None:
-                await command(context)
-        elif context.is_text_message:
+                await command(ctx)
+        elif ctx.is_text_message:
             for handler in self._text_handlers:
-                await handler(context)
+                await handler(ctx)
 
     async def _run_scheduler(self) -> None:
         async with asyncio.TaskGroup() as tg:

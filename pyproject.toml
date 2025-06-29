@@ -1,6 +1,6 @@
 [project]
 name = "lite-telegram"
-version = "0.7.2"
+version = "0.7.3"
 description = "Add your description here"
 readme = "README.md"
 authors = [
@@ -35,3 +35,9 @@ select = [
     "ASYNC"  # asyncio
 ]
 ignore = ["E501", "ASYNC109"]
+
+[dependency-groups]
+dev = [
+    "mypy>=1.16.1",
+    "types-croniter>=6.0.0.20250626",
+]
