@@ -7,7 +7,7 @@ from loguru import logger
 
 from lite_telegram.bot import TelegramBot
 from lite_telegram.context import Context
-from lite_telegram.types import FilterCallable, HandlerCallable, ScheduleCallable
+from lite_telegram.types import FilterCallable, HandlerCallable, ScheduleCallable, UpdateType
 from lite_telegram.utils import sleep_until
 
 
@@ -29,7 +29,7 @@ class BotManager:
         self,
         bot: TelegramBot,
         poll_interval: int = 60,
-        allowed_updates: list[str] | None = None,
+        allowed_updates: list[UpdateType] | None = None,
     ) -> None:
         self.bot = bot
         self.poll_interval = poll_interval
